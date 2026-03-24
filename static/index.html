@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a1a1a;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    .card.wide { max-width: 900px; }
+
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; }
+    h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 28px 0;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #4285F4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 22px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #3367d6; }
+
+    .btn-outline {
+      background: transparent;
+      color: #4285F4;
+      border: 1.5px solid #4285F4;
+    }
+    .btn-outline:hover { background: #e8f0fe; }
+
+    .btn-green {
+      background: #1a73e8;
+    }
+    .btn-green:hover { background: #1558b0; }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Date picker */
+    .date-group {
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .date-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .date-group input[type="date"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .date-group input[type="date"]:focus { border-color: #4285F4; }
+
+    /* Welcome back card */
+    .welcome-box {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .welcome-box .email { font-weight: 600; color: #1a1a1a; }
+    .welcome-box .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
+
+    /* Spinner */
+    .spinner {
+      width: 52px;
+      height: 52px;
+      border: 5px solid #e8eaed;
+      border-top-color: #4285F4;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      margin: 0 auto 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .stat {
+      display: inline-block;
+      background: #e8f0fe;
+      color: #1a73e8;
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      text-align: left;
+      margin-top: 28px;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+    th {
+      background: #f8f9fa;
+      padding: 11px 14px;
+      font-weight: 600;
+      color: #555;
+      border-bottom: 1px solid #e8eaed;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .empty { color: #888; padding: 32px; text-align: center; }
+
+    .error-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .error-msg { color: #d93025; margin-bottom: 24px; font-size: 0.9rem; }
+
+    #view-landing, #view-loading, #view-results, #view-error { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Landing -->
+<div class="card" id="view-landing">
+  <h1>Job Application Tracker</h1>
+  <p class="subtitle">Connect your Gmail to see every job application confirmation email, organized in one place.</p>
+
+  <!-- Welcome back section (shown if session exists) -->
+  <div id="welcome-section" style="display:none">
+    <div class="welcome-box">
+      <div class="email" id="welcome-email"></div>
+      <div class="meta" id="welcome-meta"></div>
+    </div>
+    <div class="btn-row" style="margin-bottom:20px">
+      <a href="#" class="btn" id="view-saved-btn">View my applications</a>
+      <a href="#" class="btn btn-outline" id="rescan-btn">Re-scan</a>
+    </div>
+    <hr class="divider">
+    <h2>Scan with a different date</h2>
+  </div>
+
+  <div id="scan-form">
+    <div class="date-group">
+      <label for="since-date">Scan emails starting from</label>
+      <input type="date" id="since-date" value="2024-08-01">
+    </div>
+    <a href="#" class="btn" id="connect-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.706 17.64 9.2z" fill="rgba(255,255,255,0.9)"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="rgba(255,255,255,0.8)"/>
+        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="rgba(255,255,255,0.7)"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="rgba(255,255,255,0.6)"/>
+      </svg>
+      Connect Gmail
+    </a>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="card" id="view-loading">
+  <div class="spinner"></div>
+  <h1>Scanning your Gmail</h1>
+  <p class="subtitle">This may take 30–60 seconds depending on the size of your inbox. Hang tight.</p>
+</div>
+
+<!-- Results -->
+<div class="card wide" id="view-results">
+  <div class="stat" id="stat-label"></div>
+  <h1>Your Applications</h1>
+  <p class="subtitle" id="results-subtitle"></p>
+  <div class="actions-row">
+    <a href="/" class="btn btn-outline btn-sm">← Back</a>
+    <button class="btn btn-sm" onclick="downloadJSON()">Download JSON</button>
+    <button class="btn btn-sm" onclick="downloadCSV()">Download CSV</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>From</th>
+          <th>Date</th>
+          <th>Preview</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Error -->
+<div class="card" id="view-error">
+  <div class="error-icon">⚠️</div>
+  <h1>Something went wrong</h1>
+  <p class="error-msg" id="error-msg"></p>
+  <a href="/" class="btn btn-outline">Try Again</a>
+</div>
+
+<script>
+  let currentResults = [];
+
+  const params = new URLSearchParams(window.location.search);
+  const jobID = params.get('job');
+
+  function show(id) {
+    ['landing', 'loading', 'results', 'error'].forEach(v => {
+      document.getElementById('view-' + v).style.display = (v === id) ? 'block' : 'none';
+    });
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function showResults(results, subtitle) {
+    currentResults = results || [];
+    document.getElementById('stat-label').textContent = currentResults.length + ' email' + (currentResults.length !== 1 ? 's' : '') + ' found';
+    document.getElementById('results-subtitle').textContent = subtitle || '';
+    const tbody = document.getElementById('results-body');
+    if (currentResults.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No job application emails found for this date range.</td></tr>';
+    } else {
+      tbody.innerHTML = currentResults.map(app => `
+        <tr>
+          <td title="${esc(app.subject)}">${esc(app.subject)}</td>
+          <td title="${esc(app.from)}">${esc(app.from)}</td>
+          <td>${esc(app.date)}</td>
+          <td title="${esc(app.snippet)}">${esc(app.snippet)}</td>
+        </tr>
+      `).join('');
+    }
+    show('results');
+  }
+
+  // --- Download helpers ---
+
+  function downloadJSON() {
+    const blob = new Blob([JSON.stringify(currentResults, null, 2)], { type: 'application/json' });
+    triggerDownload(blob, 'applications.json');
+  }
+
+  function downloadCSV() {
+    const headers = ['subject', 'from', 'date', 'snippet'];
+    const rows = currentResults.map(app =>
+      headers.map(h => '"' + (app[h] || '').replace(/"/g, '""') + '"').join(',')
+    );
+    const csv = [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    triggerDownload(blob, 'applications.csv');
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // --- Session / returning user ---
+
+  async function checkSession() {
+    try {
+      const res = await fetch('/api/me');
+      if (res.status === 401) return null;
+      return await res.json();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function loadSavedResults() {
+    show('loading');
+    try {
+      const res = await fetch('/api/my-results');
+      if (!res.ok) throw new Error('failed to load');
+      const data = await res.json();
+      showResults(data, 'Loaded from your last scan.');
+    } catch (e) {
+      document.getElementById('error-msg').textContent = 'Could not load saved results. Try scanning again.';
+      show('error');
+    }
+  }
+
+  // --- Connect Gmail button wires up the since-date ---
+  document.getElementById('connect-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const since = document.getElementById('since-date').value || '2024-08-01';
+    window.location.href = '/auth/login?since=' + encodeURIComponent(since);
+  });
+
+  document.getElementById('view-saved-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    loadSavedResults();
+  });
+
+  document.getElementById('rescan-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('welcome-section').style.display = 'none';
+  });
+
+  // --- Page init ---
+
+  if (jobID) {
+    // Coming back from OAuth — poll for job result.
+    show('loading');
+    let attempts = 0;
+    const maxAttempts = 90;
+    const poll = setInterval(async () => {
+      if (++attempts > maxAttempts) {
+        clearInterval(poll);
+        document.getElementById('error-msg').textContent = 'Scan timed out after 3 minutes. Please try again.';
+        show('error');
+        return;
+      }
+      try {
+        const res = await fetch('/api/status?job=' + encodeURIComponent(jobID));
+        const data = await res.json();
+        if (data.status === 'done') {
+          clearInterval(poll);
+          showResults(data.results || [], 'Job application confirmation emails found in your Gmail.');
+        } else if (data.status === 'error') {
+          clearInterval(poll);
+          document.getElementById('error-msg').textContent = data.error || 'Unknown error occurred.';
+          show('error');
+        }
+      } catch (_) {
+        // network blip — keep polling
+      }
+    }, 2000);
+  } else {
+    // Landing page — check for existing session.
+    show('landing');
+    checkSession().then(info => {
+      if (!info || !info.email) return;
+      document.getElementById('welcome-email').textContent = info.email;
+      let meta = '';
+      if (info.count != null) meta += info.count + ' applications saved';
+      if (info.lastScanned) meta += ' · Last scanned ' + info.lastScanned;
+      if (info.sinceDate) meta += ' (since ' + info.sinceDate + ')';
+      document.getElementById('welcome-meta').textContent = meta;
+      document.getElementById('welcome-section').style.display = 'block';
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: job-application-tracker
+    runtime: go
+    buildCommand: go build -o server .
+    startCommand: ./server
+    envVars:
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: APP_BASE_URL
+        sync: false  # Set this manually in the Render dashboard after deployment (e.g. https://your-service-name.onrender.com)
+      - key: SESSION_SECRET
+        generateValue: true
