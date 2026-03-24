@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"google.golang.org/api/gmail/v1"
 )
 
-const gmailQuery = `after:2024/8/01 ("thank you for applying" OR "we received your application" OR "application submitted" OR "thank you for your interest" OR "we have received your application" OR "your application has been received" OR "we appreciate your interest" OR "application confirmation" OR "we have received your resume" OR "your application is being reviewed" OR "we are reviewing your application" OR "we have your application" OR "your application has been submitted" OR "thank you for your application" OR "we have received your job application") -in:chats -is:sent`
+const gmailKeywords = `("thank you for applying" OR "we received your application" OR "application submitted" OR "thank you for your interest" OR "we have received your application" OR "your application has been received" OR "we appreciate your interest" OR "application confirmation" OR "we have received your resume" OR "your application is being reviewed" OR "we are reviewing your application" OR "we have your application" OR "your application has been submitted" OR "thank you for your application" OR "we have received your job application")`
 
 // Application represents a single job application email.
 type Application struct {
@@ -17,14 +18,26 @@ type Application struct {
 	Snippet string `json:"snippet"`
 }
 
+// buildQuery constructs the Gmail search query for the given start date.
+// sinceDate must be in YYYY-MM-DD format.
+func buildQuery(sinceDate string) string {
+	// Convert YYYY-MM-DD to YYYY/M/D for Gmail's query syntax.
+	parts := strings.SplitN(sinceDate, "-", 3)
+	if len(parts) == 3 {
+		sinceDate = fmt.Sprintf("%s/%s/%s", parts[0], strings.TrimLeft(parts[1], "0"), strings.TrimLeft(parts[2], "0"))
+	}
+	return fmt.Sprintf("after:%s %s -in:chats -is:sent", sinceDate, gmailKeywords)
+}
+
 // ScrapeApplications searches the authenticated user's Gmail for job application
-// confirmation emails and returns them. Pagination is handled automatically.
-func ScrapeApplications(ctx context.Context, srv *gmail.Service) ([]Application, error) {
+// confirmation emails since sinceDate (YYYY-MM-DD) and returns them.
+func ScrapeApplications(ctx context.Context, srv *gmail.Service, sinceDate string) ([]Application, error) {
+	query := buildQuery(sinceDate)
 	pageToken := ""
 	var results []Application
 
 	for {
-		req := srv.Users.Messages.List("me").Q(gmailQuery).IncludeSpamTrash(false)
+		req := srv.Users.Messages.List("me").Q(query).IncludeSpamTrash(false)
 		if pageToken != "" {
 			req.PageToken(pageToken)
 		}
