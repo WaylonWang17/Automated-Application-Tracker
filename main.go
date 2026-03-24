@@ -88,7 +88,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
-	url := oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
+	url := oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline, oauth2.SetAuthURLParam("prompt", "select_account"))
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 

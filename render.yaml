@@ -10,6 +10,6 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: APP_BASE_URL
-        value: https://job-application-tracker.onrender.com
+        sync: false  # Set this manually in the Render dashboard after deployment (e.g. https://your-service-name.onrender.com)
       - key: SESSION_SECRET
         generateValue: true
