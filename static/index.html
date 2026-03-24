@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Application Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a1a1a;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    .card.wide { max-width: 860px; }
+
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #4285F4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 22px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #3367d6; }
+
+    .btn-outline {
+      background: transparent;
+      color: #4285F4;
+      border: 1.5px solid #4285F4;
+      margin-top: 12px;
+    }
+    .btn-outline:hover { background: #e8f0fe; }
+
+    /* Spinner */
+    .spinner {
+      width: 52px;
+      height: 52px;
+      border: 5px solid #e8eaed;
+      border-top-color: #4285F4;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      margin: 0 auto 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .stat {
+      display: inline-block;
+      background: #e8f0fe;
+      color: #1a73e8;
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      text-align: left;
+      margin-top: 28px;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+    th {
+      background: #f8f9fa;
+      padding: 11px 14px;
+      font-weight: 600;
+      color: #555;
+      border-bottom: 1px solid #e8eaed;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .empty { color: #888; padding: 32px; text-align: center; }
+
+    .error-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .error-msg { color: #d93025; margin-bottom: 24px; font-size: 0.9rem; }
+
+    #view-landing, #view-loading, #view-results, #view-error { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Landing -->
+<div class="card" id="view-landing">
+  <h1>Job Application Tracker</h1>
+  <p class="subtitle">Connect your Gmail to see every job application confirmation email since August 2024, organized in one place.</p>
+  <a href="/auth/login" class="btn">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.706 17.64 9.2z" fill="rgba(255,255,255,0.9)"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="rgba(255,255,255,0.8)"/>
+      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="rgba(255,255,255,0.7)"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="rgba(255,255,255,0.6)"/>
+    </svg>
+    Connect Gmail
+  </a>
+</div>
+
+<!-- Loading -->
+<div class="card" id="view-loading">
+  <div class="spinner"></div>
+  <h1>Scanning your Gmail</h1>
+  <p class="subtitle">This may take 30–60 seconds depending on the size of your inbox. Hang tight.</p>
+</div>
+
+<!-- Results -->
+<div class="card wide" id="view-results">
+  <div class="stat" id="stat-label"></div>
+  <h1>Your Applications</h1>
+  <p class="subtitle">Job application confirmation emails found in your Gmail since August 2024.</p>
+  <a href="/" class="btn btn-outline">Scan Again</a>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>From</th>
+          <th>Date</th>
+          <th>Preview</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Error -->
+<div class="card" id="view-error">
+  <div class="error-icon">⚠️</div>
+  <h1>Something went wrong</h1>
+  <p class="error-msg" id="error-msg"></p>
+  <a href="/" class="btn btn-outline">Try Again</a>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const jobID = params.get('job');
+
+  function show(id) {
+    ['landing', 'loading', 'results', 'error'].forEach(v => {
+      document.getElementById('view-' + v).style.display = (v === id) ? 'block' : 'none';
+    });
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function showResults(results) {
+    document.getElementById('stat-label').textContent = results.length + ' email' + (results.length !== 1 ? 's' : '') + ' found';
+    const tbody = document.getElementById('results-body');
+    if (results.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No job application emails found since August 2024.</td></tr>';
+    } else {
+      tbody.innerHTML = results.map(app => `
+        <tr>
+          <td title="${esc(app.subject)}">${esc(app.subject)}</td>
+          <td title="${esc(app.from)}">${esc(app.from)}</td>
+          <td>${esc(app.date)}</td>
+          <td title="${esc(app.snippet)}">${esc(app.snippet)}</td>
+        </tr>
+      `).join('');
+    }
+    show('results');
+  }
+
+  if (jobID) {
+    show('loading');
+    let attempts = 0;
+    const maxAttempts = 90; // 3 minutes at 2s intervals
+    const poll = setInterval(async () => {
+      if (++attempts > maxAttempts) {
+        clearInterval(poll);
+        document.getElementById('error-msg').textContent = 'Scan timed out after 3 minutes. Please try again.';
+        show('error');
+        return;
+      }
+      try {
+        const res = await fetch('/api/status?job=' + encodeURIComponent(jobID));
+        const data = await res.json();
+        if (data.status === 'done') {
+          clearInterval(poll);
+          showResults(data.results || []);
+        } else if (data.status === 'error') {
+          clearInterval(poll);
+          document.getElementById('error-msg').textContent = data.error || 'Unknown error occurred.';
+          show('error');
+        }
+        // status === 'running': keep polling
+      } catch (_) {
+        // network blip — keep polling
+      }
+    }, 2000);
+  } else {
+    show('landing');
+  }
+</script>
+</body>
+</html>
